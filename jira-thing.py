@@ -15,8 +15,14 @@ if not api_key:
 # Configure the API key
 genai.configure(api_key=api_key)
 
+
+gemini_model_name = os.getenv('GEMINI_MODEL_NAME')
+
+if not gemini_model_name:
+    raise ValueError("GEMINI_MODEL_NAME not found in .env file")
+
 # Initialize the model
-model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25')  # Use a valid model name, e.g., 'gemini-pro'
+model = genai.GenerativeModel(gemini_model_name)  # Use a valid model name, e.g., 'gemini-pro'
 
 # Generate content
 try:
