@@ -19,7 +19,10 @@ genai.configure(api_key=api_key)
 model = genai.GenerativeModel('gemini-2.5-pro-exp-03-25')  # Use a valid model name, e.g., 'gemini-pro'
 
 # Generate content
-response = model.generate_content("Explain how AI works")
-
+try:
+    response = model.generate_content("Explain how AI works")
+    print(response.text)
+except Exception as e:
+    print(f"An error occurred: {e}")
 # Print the response
 print(response.text)
