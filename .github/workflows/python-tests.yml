@@ -28,3 +28,7 @@ jobs:
         pytest tests/
       env:
         DEBUG_LEVEL: ERROR  # Set a default log level for tests
+        GEMINI_API_KEY: fake_gemini_key
+        JIRA_API_TOKEN: fake_jira_token
+        JIRA_EMAIL: test@example.com
+        JIRA_DOMAIN: test.atlassian.net
