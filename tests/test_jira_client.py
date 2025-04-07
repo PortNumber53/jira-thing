@@ -129,5 +129,5 @@ def test_create_task(mock_config):
 def test_jira_manager_connection_failure():
     """Test JiraManager initialization failure."""
     with patch('jira_client.JIRA', side_effect=Exception("Connection failed")):
-        with pytest.raises(RuntimeError, match="Jira client initialization failed"):
+        with pytest.raises(RuntimeError, match="Jira client initialization failed: Connection failed"): # Added message matching
             JiraManager()
