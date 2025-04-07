@@ -48,7 +48,7 @@ class JiraManager:
                 for project in projects
             ]
 
-            logger.debug(f"Successfully retrieved {len(project_list)} Jira projects")
+            logger.debug(f"Successfully retrieved {len(project_list)} Jira projects. Project keys: {[p['key'] for p in project_list]}")
             return project_list
 
         except Exception as e:
