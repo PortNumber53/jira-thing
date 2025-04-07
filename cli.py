@@ -161,9 +161,9 @@ def handle_jira_task_create(args):
             print(f"- Project: {task['project']}")
         else:
             print("Failed to create task.")
-    except Exception as e:
+    except JiraException as e:
         logger.error(f"Error creating task: {e}")
-        print(f"Error: {e}")
+        print("Failed to create task. Please check the logs for more details.")
 
 def handle_help(args):
     """
