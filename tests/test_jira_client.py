@@ -62,17 +62,11 @@ def test_jira_manager_initialization(mock_config, caplog):
     jira_manager = JiraManager()
     assert jira_manager.client is not None
     
-    # Print out all captured log records for debugging
-    # for record in caplog.records:
-    #     print(f"Log record: {record.levelname} - {record.message}")
-    
-    # Use a more flexible assertion for log messages
-    for record in caplog.get_records('DEBUG'):
-        print(f"Log record: {record.levelname} - {record.message}")
-    
-    # Use a more flexible assertion for log messages
-    # assert any("Successfully connected to Jira" in record.message for record in caplog.records)
-    caplog.assert_any("Successfully connected to Jira", logging.INFO)
+    # Check for log message
+    assert any(
+        "Successfully connected to Jira" in record.message and record.levelno == logging.INFO 
+        for record in caplog.records
+    )
 
 @patch('jira_client.JIRA', MockJIRA)
 @patch('jira_client.config', new_callable=dict)
