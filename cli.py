@@ -105,8 +105,9 @@ def handle_jira_project_list(args):
         for project in projects:
             print(f"- {project['key']}: {project['name']}")
     except Exception as e:
+    except JiraException as e:
         logger.error(f"Error listing projects: {e}")
-        print(f"Error: {e}")
+        print("Failed to list projects. Please check the logs for more details.")
 
 @command_metadata('project', 'create', 'Create a new Jira project', 
                   usage='jira project create --name "Project Name" --key PROJ --type software')
