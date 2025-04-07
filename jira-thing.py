@@ -101,5 +101,8 @@ model = genai.GenerativeModel(gemini_model_name)  # Use a valid model name, e.g.
 if __name__ == "__main__":
     projects = get_jira_projects()
     print("Available Jira Projects:")
-    for project in projects:
-        print(f"Key: {project['key']}, Name: {project['name']}, ID: {project['id']}")
+    if projects:
+        for project in projects:
+            print(f"Key: {project['key']}, Name: {project['name']}, ID: {project['id']}")
+    else:
+        print("No Jira projects found")
