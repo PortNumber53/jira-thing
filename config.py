@@ -6,26 +6,61 @@ import logging
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('jira_app.log')
-    ]
-)
+# Explicitly load .env file
+# Load .env file
+load_dotenv(override=True)
+
+# Configure logging based on environment variable
+debug_level = os.getenv('DEBUG_LEVEL', 'INFO').upper()
+
+log_levels = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
+}
+
+# Check if handlers exist before adding
+if not logging.getLogger().hasHandlers():
+    logging.getLogger().handlers.clear()
+
+# Create a custom handler with the desired log level
+handler = logging.StreamHandler()
+level = os.getenv('DEBUG_LEVEL', 'INFO').upper()
+handler.setLevel(getattr(logging, level, logging.WARNING))
+
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# Configure the root logger
+root_logger = logging.getLogger()
+root_logger.setLevel(log_levels.get(debug_level, logging.WARNING))
+if root_logger.hasHandlers():
+    root_logger.handlers = []  # Clear any existing handlers
+root_logger.addHandler(handler)
+
+# Add file logging
+file_handler = logging.FileHandler('jira_app.log')
+file_handler.setLevel(log_levels.get(debug_level, logging.WARNING))
+file_handler.setFormatter(formatter)
+root_logger.addHandler(file_handler)
+
+# Silence third-party library loggers if needed
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('google').setLevel(logging.WARNING)
+
+# Create a logger for the current module
 logger = logging.getLogger(__name__)
 
 def load_environment_variables():
     """
     Load environment variables from .env file.
-    
+
     Raises:
         SystemExit: If required environment variables are missing
     """
-    load_dotenv()
-
     # Check Gemini API configuration
     api_key = os.getenv('GEMINI_API_KEY')
     gemini_model_name = os.getenv('GEMINI_MODEL_NAME')

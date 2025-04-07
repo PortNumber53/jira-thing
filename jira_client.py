@@ -4,7 +4,8 @@ import logging
 from jira import JIRA
 from config import config
 
-logger = logging.getLogger(__name__)
+# Use the root logger instead of creating a new named logger
+logger = logging.getLogger()
 
 class JiraManager:
     def __init__(self):
@@ -26,7 +27,7 @@ class JiraManager:
 
             logger.info(f"Successfully connected to Jira at {config['jira_server']}")
         except Exception as e:
-            logger.error(f"Failed to initialize Jira client: {e}", exc_info=True)
+            logger.critical(f"Failed to initialize Jira client: {e}", exc_info=True)
             raise RuntimeError(f"Jira client initialization failed: {e}")
 
     def get_projects(self):
@@ -37,26 +38,22 @@ class JiraManager:
             list: A list of project dictionaries containing project details.
         """
         try:
-            # Get all projects
+            # Retrieve projects
             projects = self.client.projects()
-
-            # Convert projects to a list of dictionaries for easier handling
             project_list = [
                 {
                     'key': project.key,
-                    'name': project.name,
-                    'id': project.id
+                    'name': project.name
                 }
                 for project in projects
             ]
 
-            logger.info(f"Successfully retrieved {len(project_list)} Jira projects")
+            logger.debug(f"Successfully retrieved {len(project_list)} Jira projects. Project keys: {[p['key'] for p in project_list]}")
             return project_list
 
         except Exception as e:
-            # Log the full exception with traceback
-            logger.exception("Error retrieving Jira projects")
-            return []
+            logger.error(f"Failed to retrieve Jira projects: {e}", exc_info=True)
+            raise
 
     def create_project(self, name, key, project_type='software'):
         """
