@@ -39,15 +39,56 @@ if not gemini_model_name:
     logger.error("GEMINI_MODEL_NAME not found in .env file")
     sys.exit(1)
 
-# Jira Configuration
-jira_token = os.getenv('JIRA_API_TOKEN')
-jira_base_url = os.getenv('JIRA_BASE_URL')
-jira_username = os.getenv('JIRA_USERNAME')
+# Global Jira client variable
+jira_client = None
 
-# Check if Jira credentials are present
-if not jira_token or not jira_base_url or not jira_username:
-    logger.error("JIRA_API_TOKEN or JIRA_BASE_URL or JIRA_USERNAME not found in .env file")
-    sys.exit(1)
+def initialize_jira_client():
+    """
+    Initialize the Jira client using environment variables.
+    
+    Returns:
+        JIRA: Initialized Jira client
+    
+    Raises:
+        RuntimeError: If Jira connection cannot be established
+    """
+    global jira_client
+    
+    try:
+        # Load environment variables if not already loaded
+        load_dotenv()
+        
+        # Retrieve Jira connection parameters from environment
+        jira_server = os.getenv('JIRA_BASE_URL')
+        jira_token = os.getenv('JIRA_API_TOKEN')
+        jira_username = os.getenv('JIRA_USERNAME')
+        
+        # Validate required parameters
+        if not all([jira_server, jira_token, jira_username]):
+            raise ValueError("Missing Jira connection parameters in .env file")
+        
+        # Initialize Jira client
+        jira_client = JIRA(
+            server=jira_server, 
+            basic_auth=(jira_username, jira_token)
+        )
+        
+        # Verify connection by getting current user
+        jira_client.current_user = jira_client.current_user()
+        
+        logger.info(f"Successfully connected to Jira at {jira_server}")
+        return jira_client
+    
+    except Exception as e:
+        logger.error(f"Failed to initialize Jira client: {e}", exc_info=True)
+        raise RuntimeError(f"Jira client initialization failed: {e}")
+
+# Call initialization at script import
+try:
+    initialize_jira_client()
+except Exception as e:
+    logger.warning(f"Jira client not initialized on import: {e}")
+    # Allow script to continue running, but operations will fail if Jira client is needed
 
 def get_jira_projects():
     """
@@ -58,16 +99,10 @@ def get_jira_projects():
     """
     try:
         # Validate credentials
-        if not jira_token or not jira_base_url or not jira_username:
-            raise ValueError("Jira credentials are missing")
+        if not jira_client:
+            raise ValueError("Jira client is not initialized")
 
-        logger.info(f"Attempting to connect to Jira at {jira_base_url}")
-
-        # Initialize Jira client with more explicit authentication
-        jira_client = JIRA(
-            server=jira_base_url,
-            basic_auth=(jira_username, jira_token)
-        )
+        logger.info(f"Attempting to connect to Jira at {jira_client.server}")
 
         # Get all projects
         projects = jira_client.projects()
@@ -120,8 +155,43 @@ def handle_jira_project_create(args):
     
     Args:
         args (argparse.Namespace): Parsed command-line arguments
+    
+    Raises:
+        Exception: If project creation fails
     """
-    print(f"Creating Jira project: name={args.name}, key={args.key}, type={args.type}")
+    try:
+        # Validate input parameters
+        if not args.name or not args.key:
+            raise ValueError("Project name and key are required")
+        
+        # Use the existing JIRA connection from the global context
+        if not jira_client:
+            raise RuntimeError("Jira client not initialized. Please check your Jira connection settings.")
+        
+        # Attempt to create the project
+        project_type_map = {
+            'software': 'software',
+            'service': 'service'
+        }
+        
+        new_project = jira_client.create_project(
+            key=args.key.upper(),  # Jira typically requires uppercase keys
+            name=args.name,
+            projectTypeKey=project_type_map.get(args.type, 'software'),
+            lead=jira_client.current_user  # Use the current user as project lead
+        )
+        
+        # Log successful project creation
+        logger.info(f"Successfully created Jira project: {args.name} (Key: {args.key})")
+        print(f"Project '{args.name}' created successfully with key {args.key}")
+        
+        return new_project
+    
+    except Exception as e:
+        # Log the error and provide a user-friendly error message
+        logger.error(f"Failed to create Jira project: {e}", exc_info=True)
+        print(f"Error creating Jira project: {e}")
+        raise
 
 def handle_jira_task_create(args):
     """
@@ -129,8 +199,41 @@ def handle_jira_task_create(args):
     
     Args:
         args (argparse.Namespace): Parsed command-line arguments
+    
+    Raises:
+        Exception: If task creation fails
     """
-    print(f"Creating Jira task for project: {args.project}")
+    try:
+        # Validate input parameters
+        if not args.project:
+            raise ValueError("Project key is required to create a task")
+        
+        # Use the existing JIRA connection from the global context
+        if not jira_client:
+            raise RuntimeError("Jira client not initialized. Please check your Jira connection settings.")
+        
+        # Prepare task creation dictionary
+        issue_dict = {
+            'project': {'key': args.project.upper()},  # Ensure uppercase project key
+            'summary': args.summary if hasattr(args, 'summary') else 'New Task Created via CLI',
+            'description': args.description if hasattr(args, 'description') else 'Task created using Jira CLI tool',
+            'issuetype': {'name': args.type if hasattr(args, 'type') else 'Task'}
+        }
+        
+        # Attempt to create the task
+        new_task = jira_client.create_issue(fields=issue_dict)
+        
+        # Log successful task creation
+        logger.info(f"Successfully created Jira task in project {args.project}: {new_task.key}")
+        print(f"Task created successfully: {new_task.key}")
+        
+        return new_task
+    
+    except Exception as e:
+        # Log the error and provide a user-friendly error message
+        logger.error(f"Failed to create Jira task: {e}", exc_info=True)
+        print(f"Error creating Jira task: {e}")
+        raise
 
 def main():
     """
@@ -177,6 +280,9 @@ jira_task_subparsers = jira_task_parser.add_subparsers(help='Jira task subcomman
 # Jira task create
 jira_task_create_parser = jira_task_subparsers.add_parser('create', help='Create a Jira task')
 jira_task_create_parser.add_argument('--project', required=True, help='Project key')
+jira_task_create_parser.add_argument('--summary', help='Task summary')
+jira_task_create_parser.add_argument('--description', help='Task description')
+jira_task_create_parser.add_argument('--type', default='Task', choices=['Task', 'Sub-task', 'Epic'], help='Task type')
 jira_task_create_parser.set_defaults(func=handle_jira_task_create)
 
 if __name__ == '__main__':
