@@ -21,8 +21,9 @@ log_levels = {
     'CRITICAL': logging.CRITICAL
 }
 
-# Disable any existing loggers
-logging.getLogger().handlers.clear()
+# Check if handlers exist before adding
+if not logging.getLogger().hasHandlers():
+    logging.getLogger().handlers.clear()
 
 # Create a custom handler with the desired log level
 handler = logging.StreamHandler()
