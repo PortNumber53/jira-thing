@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 
 # Explicitly load .env file
+# Load .env file
 load_dotenv(override=True)
 
 # Configure logging based on environment variable
