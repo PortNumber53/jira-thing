@@ -71,7 +71,8 @@ def test_jira_manager_initialization(mock_config, caplog):
         print(f"Log record: {record.levelname} - {record.message}")
     
     # Use a more flexible assertion for log messages
-    assert any("Successfully connected to Jira" in record.message for record in caplog.records)
+    # assert any("Successfully connected to Jira" in record.message for record in caplog.records)
+    caplog.assert_any("Successfully connected to Jira", logging.INFO)
 
 @patch('jira_client.JIRA', MockJIRA)
 @patch('jira_client.config', new_callable=dict)
