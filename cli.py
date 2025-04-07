@@ -132,9 +132,9 @@ def handle_jira_project_create(args):
             print(f"- Name: {project['name']}")
         else:
             print("Failed to create project.")
-    except Exception as e:
+    except JiraException as e:
         logger.error(f"Error creating project: {e}")
-        print(f"Error: {e}")
+        print("Failed to create project. Please check the logs for more details.")
 
 @command_metadata('task', 'create', 'Create a new Jira task', 
                   usage='jira task create --project PROJ --summary "Task Summary" --type Task')
