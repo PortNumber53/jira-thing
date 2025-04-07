@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
+import argparse
+import sys
 from dotenv import load_dotenv
 import os
-import sys
 import logging
 import google.generativeai as genai
 from jira import JIRA
@@ -87,18 +90,22 @@ def get_jira_projects():
         logger.exception("Error retrieving Jira projects")
         return []
 
-# Initialize the model
-model = genai.GenerativeModel(gemini_model_name)  # Use a valid model name, e.g., 'gemini-pro'
+def handle_help(args):
+    """
+    Display help information for the CLI.
+    
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments
+    """
+    parser.print_help()
 
-# Generate content
-# try:
-#     response = model.generate_content("Explain how AI works")
-#     print(response.text)
-# except Exception as e:
-#     print(f"An error occurred: {e}")
-
-# Example usage
-if __name__ == "__main__":
+def handle_jira_project_list(args):
+    """
+    Handle the 'jira project list' command.
+    
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments
+    """
     projects = get_jira_projects()
     print("Available Jira Projects:")
     if projects:
@@ -106,3 +113,72 @@ if __name__ == "__main__":
             print(f"Key: {project['key']}, Name: {project['name']}, ID: {project['id']}")
     else:
         print("No Jira projects found")
+
+def handle_jira_project_create(args):
+    """
+    Handle the 'jira project create' command.
+    
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments
+    """
+    print(f"Creating Jira project: name={args.name}, key={args.key}, type={args.type}")
+
+def handle_jira_task_create(args):
+    """
+    Handle the 'jira task create' command.
+    
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments
+    """
+    print(f"Creating Jira task for project: {args.project}")
+
+def main():
+    """
+    Main entry point for the CLI application.
+    """
+    # If no arguments are provided, show help
+    if len(sys.argv) == 1:
+        parser.print_help()
+        sys.exit(1)
+    
+    # Parse arguments and call the appropriate handler
+    args = parser.parse_args()
+    args.func(args)
+
+# Create the top-level parser
+parser = argparse.ArgumentParser(description='Jira CLI Tool')
+subparsers = parser.add_subparsers(help='Commands')
+
+# Help command (default)
+parser.set_defaults(func=handle_help)
+
+# Jira group
+jira_parser = subparsers.add_parser('jira', help='Jira-related commands')
+jira_subparsers = jira_parser.add_subparsers(help='Jira subcommands')
+
+# Jira project subcommands
+jira_project_parser = jira_subparsers.add_parser('project', help='Jira project commands')
+jira_project_subparsers = jira_project_parser.add_subparsers(help='Jira project subcommands')
+
+# Jira project list
+jira_project_list_parser = jira_project_subparsers.add_parser('list', help='List Jira projects')
+jira_project_list_parser.set_defaults(func=handle_jira_project_list)
+
+# Jira project create
+jira_project_create_parser = jira_project_subparsers.add_parser('create', help='Create a Jira project')
+jira_project_create_parser.add_argument('--name', required=True, help='Project name')
+jira_project_create_parser.add_argument('--key', required=True, help='Project key')
+jira_project_create_parser.add_argument('--type', default='software', choices=['software', 'service'], help='Project type')
+jira_project_create_parser.set_defaults(func=handle_jira_project_create)
+
+# Jira task subcommands
+jira_task_parser = jira_subparsers.add_parser('task', help='Jira task commands')
+jira_task_subparsers = jira_task_parser.add_subparsers(help='Jira task subcommands')
+
+# Jira task create
+jira_task_create_parser = jira_task_subparsers.add_parser('create', help='Create a Jira task')
+jira_task_create_parser.add_argument('--project', required=True, help='Project key')
+jira_task_create_parser.set_defaults(func=handle_jira_task_create)
+
+if __name__ == '__main__':
+    main()
