@@ -26,7 +26,8 @@ logging.getLogger().handlers.clear()
 
 # Create a custom handler with the desired log level
 handler = logging.StreamHandler()
-handler.setLevel(log_levels.get(debug_level, logging.WARNING))
+level = os.getenv('DEBUG_LEVEL', 'INFO').upper()
+handler.setLevel(getattr(logging, level, logging.WARNING))
 
 # Create a formatter
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
