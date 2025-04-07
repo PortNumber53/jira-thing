@@ -35,9 +35,9 @@ def command_metadata(category, name, description, usage=None, options=None):
 def display_help_summary(context=None):
     """
     Display a comprehensive help summary for the Jira CLI tool.
-    
+
     Args:
-        context (str, optional): Specific context to display help for 
+        context (str, optional): Specific context to display help for
                                  (e.g., 'jira', 'jira project', 'jira task')
     """
     print("Jira CLI Tool Help")
@@ -96,7 +96,7 @@ def handle_jira_project_list(args):
     try:
         jira_manager = JiraManager()
         projects = jira_manager.get_projects()
-        
+
         if not projects:
             print("No projects found.")
             return
@@ -104,12 +104,11 @@ def handle_jira_project_list(args):
         print("Jira Projects:")
         for project in projects:
             print(f"- {project['key']}: {project['name']}")
-    except Exception as e:
     except JiraException as e:
         logger.error(f"Error listing projects: {e}")
         print("Failed to list projects. Please check the logs for more details.")
 
-@command_metadata('project', 'create', 'Create a new Jira project', 
+@command_metadata('project', 'create', 'Create a new Jira project',
                   usage='jira project create --name "Project Name" --key PROJ --type software')
 def handle_jira_project_create(args):
     """
@@ -121,11 +120,11 @@ def handle_jira_project_create(args):
     try:
         jira_manager = JiraManager()
         project = jira_manager.create_project(
-            name=args.name, 
-            key=args.key, 
+            name=args.name,
+            key=args.key,
             project_type=args.type
         )
-        
+
         if project:
             print(f"Project created successfully:")
             print(f"- Key: {project['key']}")
@@ -136,7 +135,7 @@ def handle_jira_project_create(args):
         logger.error(f"Error creating project: {e}")
         print("Failed to create project. Please check the logs for more details.")
 
-@command_metadata('task', 'create', 'Create a new Jira task', 
+@command_metadata('task', 'create', 'Create a new Jira task',
                   usage='jira task create --project PROJ --summary "Task Summary" --type Task')
 def handle_jira_task_create(args):
     """
@@ -153,7 +152,7 @@ def handle_jira_task_create(args):
             description=args.description,
             task_type=args.type
         )
-        
+
         if task:
             print(f"Task created successfully:")
             print(f"- Key: {task['key']}")
@@ -208,8 +207,8 @@ def setup_cli_parser():
 
     # Jira project list
     jira_project_list_parser = jira_project_subparsers.add_parser(
-        'list', 
-        help='List all Jira projects', 
+        'list',
+        help='List all Jira projects',
         description='Retrieve and display a list of all Jira projects in your workspace.',
         epilog='Example: ./main.py jira project list'
     )
@@ -217,14 +216,14 @@ def setup_cli_parser():
 
     # Jira project create
     jira_project_create_parser = jira_project_subparsers.add_parser(
-        'create', 
-        help='Create a new Jira project', 
+        'create',
+        help='Create a new Jira project',
         description='Create a new Jira project with specified details.',
         epilog='Example: ./main.py jira project create --name "My Project" --key MYPROJ'
     )
     jira_project_create_parser.add_argument('--name', required=True, help='Project name (required)')
     jira_project_create_parser.add_argument('--key', required=True, help='Project key (required, must be unique)')
-    jira_project_create_parser.add_argument('--type', default='software', choices=['software', 'service'], 
+    jira_project_create_parser.add_argument('--type', default='software', choices=['software', 'service'],
                                             help='Project type (optional, default: software)')
     jira_project_create_parser.set_defaults(func=handle_jira_project_create)
 
@@ -236,16 +235,16 @@ def setup_cli_parser():
 
     # Jira task create
     jira_task_create_parser = jira_task_subparsers.add_parser(
-        'create', 
-        help='Create a new Jira task', 
+        'create',
+        help='Create a new Jira task',
         description='Create a new task in a specified Jira project.',
         epilog='Example: ./main.py jira task create --project MYPROJ --summary "Implement feature"'
     )
     jira_task_create_parser.add_argument('--project', required=True, help='Project key (required)')
     jira_task_create_parser.add_argument('--summary', required=True, help='Task summary (required)')
     jira_task_create_parser.add_argument('--description', help='Task description (optional)')
-    jira_task_create_parser.add_argument('--type', default='Task', 
-                                         choices=['Task', 'Sub-task', 'Epic'], 
+    jira_task_create_parser.add_argument('--type', default='Task',
+                                         choices=['Task', 'Sub-task', 'Epic'],
                                          help='Task type (optional, default: Task)')
     jira_task_create_parser.set_defaults(func=handle_jira_task_create)
 
@@ -275,7 +274,7 @@ def main():
     # Parse arguments
     args = parser.parse_args()
 
-    # If no function is set (which happens when no subcommand is used), 
+    # If no function is set (which happens when no subcommand is used),
     # default to help function
     if not hasattr(args, 'func'):
         display_help_summary()
