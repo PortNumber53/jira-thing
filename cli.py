@@ -85,7 +85,8 @@ def display_help_summary(context=None):
         print("  jira task      Manage Jira tasks")
         print("\nUse 'jira [command] --help' for more information about a command.")
 
-    sys.exit(0)
+    return
+
 
 @command_metadata('project', 'list', 'List all Jira projects')
 def handle_jira_project_list(args):
