@@ -63,7 +63,11 @@ def test_jira_manager_initialization(mock_config, caplog):
     assert jira_manager.client is not None
     
     # Print out all captured log records for debugging
-    for record in caplog.records:
+    # for record in caplog.records:
+    #     print(f"Log record: {record.levelname} - {record.message}")
+    
+    # Use a more flexible assertion for log messages
+    for record in caplog.get_records('DEBUG'):
         print(f"Log record: {record.levelname} - {record.message}")
     
     # Use a more flexible assertion for log messages
