@@ -35,7 +35,8 @@ handler.setFormatter(formatter)
 # Configure the root logger
 root_logger = logging.getLogger()
 root_logger.setLevel(log_levels.get(debug_level, logging.WARNING))
-root_logger.handlers = []  # Clear any existing handlers
+if root_logger.hasHandlers():
+    root_logger.handlers = []  # Clear any existing handlers
 root_logger.addHandler(handler)
 
 # Add file logging
