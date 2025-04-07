@@ -248,6 +248,7 @@ def main():
     Main entry point for the CLI application.
     """
     # If no arguments are provided, show help
+    if len(sys.argv) == 1:
         parser.print_help(file=sys.stderr)
         sys.exit(1)
 
