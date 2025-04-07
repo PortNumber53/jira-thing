@@ -48,7 +48,7 @@ def load_environment_variables():
 
     if not all([jira_server, jira_token, jira_username]):
         logger.error("Missing Jira connection parameters in .env file")
-        sys.exit(1)
+        raise ValueError("Missing Jira connection parameters in .env file")
 
     return {
         'gemini_model_name': gemini_model_name,
