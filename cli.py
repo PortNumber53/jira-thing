@@ -51,6 +51,7 @@ def display_help_summary(context=None):
         print("\nJira Project Commands:")
         print("  list      List all Jira projects")
         print("  create    Create a new Jira project")
+        print("  statuses  List available statuses for a Jira project")
     elif context == 'jira project list':
         print("\nJira Project List Command:")
         print("  Lists all available Jira projects")
@@ -60,14 +61,22 @@ def display_help_summary(context=None):
         print("\nJira Project Create Command:")
         print("  Creates a new Jira project")
         print("\nUsage:")
-        print("  ./main.py jira project create --name 'Project Name' --key PROJ")
+        print("  ./main.py jira project create --name 'Project Name' --key PROJ --type software")
         print("\nOptions:")
         print("  --name     Project name (required)")
         print("  --key      Project key (required)")
         print("  --type     Project type (optional, default: software)")
+    elif context == 'jira project statuses':
+        print("\nJira Project Statuses Command:")
+        print("  Lists available statuses for a Jira project")
+        print("\nUsage:")
+        print("  ./main.py jira project statuses [--project PROJECT_KEY]")
+        print("\nOptions:")
+        print("  --project     Project key (optional)")
     elif context == 'jira task':
         print("\nJira Task Commands:")
         print("  create    Create a new Jira task")
+        print("  list      List tasks for a project")
     elif context == 'jira task create':
         print("\nJira Task Create Command:")
         print("  Creates a new Jira task")
@@ -78,6 +87,16 @@ def display_help_summary(context=None):
         print("  --summary     Task summary (required)")
         print("  --description Task description (optional)")
         print("  --type        Task type (optional, default: Task)")
+    elif context == 'jira task list':
+        print("\nJira Task List Command:")
+        print("  Lists tasks for a project with optional filters")
+        print("\nUsage:")
+        print("  ./main.py jira task list --project KEY [--assignee USER] [--status STATUS] [--labels LABEL1 LABEL2]")
+        print("\nOptions:")
+        print("  --project     Project key (required)")
+        print("  --assignee    Assignee (optional)")
+        print("  --status      Status (optional)")
+        print("  --labels      Labels (optional)")
     else:
         print("\nUsage: jira [command] [subcommand] [options]")
         print("\nCommands:")
@@ -135,6 +154,47 @@ def handle_jira_project_create(args):
         logger.error(f"Error creating project: {e}")
         print("Failed to create project. Please check the logs for more details.")
 
+@command_metadata('project', 'statuses', 'List available statuses for a Jira project',
+                  usage='jira project statuses [--project PROJECT_KEY]')
+def handle_jira_project_statuses(args):
+    """
+    Handle the 'jira project statuses' command.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments
+    """
+    try:
+        jira_manager = JiraManager()
+        statuses = jira_manager.get_statuses(project_key=args.project)
+
+        if not statuses:
+            print("No statuses found.")
+            return
+
+        print(f"Statuses{' for Project ' + args.project if args.project else ''}:")
+
+        # Group statuses by issue type
+        issue_type_statuses = {}
+        for status in statuses:
+            issue_type = status.get('issue_type', 'Unknown')
+            if issue_type not in issue_type_statuses:
+                issue_type_statuses[issue_type] = []
+            issue_type_statuses[issue_type].append(status)
+
+        # Print statuses grouped by issue type
+        for issue_type, type_statuses in issue_type_statuses.items():
+            print(f"\n{issue_type} Issue Type Statuses:")
+            for status in type_statuses:
+                print(f"- {status['id']} - {status['name']}")
+                if status.get('description'):
+                    print(f"  Description: {status['description']}")
+                if status.get('category'):
+                    print(f"  Category: {status['category']}")
+            print()
+    except Exception as e:
+        logger.error(f"Error retrieving statuses: {e}")
+        print("Failed to retrieve statuses. Please check the logs for more details.")
+
 @command_metadata('task', 'create', 'Create a new Jira task',
                   usage='jira task create --project PROJ --summary "Task Summary" --type Task')
 def handle_jira_task_create(args):
@@ -163,6 +223,41 @@ def handle_jira_task_create(args):
     except JiraException as e:
         logger.error(f"Error creating task: {e}")
         print("Failed to create task. Please check the logs for more details.")
+
+@command_metadata('task', 'list', 'List tasks for a project with optional filters',
+                  usage='jira task list --project KEY [--assignee USER] [--status STATUS] [--labels LABEL1 LABEL2]')
+def handle_jira_task_list(args):
+    """
+    Handle the 'jira task list' command.
+
+    Args:
+        args (argparse.Namespace): Parsed command-line arguments
+    """
+    try:
+        jira_manager = JiraManager()
+        tasks = jira_manager.get_tasks(
+            project_key=args.project,
+            assignee=args.assignee,
+            labels=args.labels,
+            sprint=args.sprint,
+            status=args.status
+        )
+
+        if not tasks:
+            print("No tasks found matching the specified criteria.")
+            return
+
+        print(f"Tasks for Project {args.project}:")
+        for task in tasks:
+            print(f"- {task['key']}: {task['summary']}")
+            print(f"  Status: {task['status']}")
+            print(f"  Assignee: {task['assignee']}")
+            if task['labels']:
+                print(f"  Labels: {', '.join(task['labels'])}")
+            print()
+    except Exception as e:
+        logger.error(f"Error listing tasks: {e}")
+        print("Failed to list tasks. Please check the logs for more details.")
 
 def handle_help(args):
     """
@@ -227,6 +322,16 @@ def setup_cli_parser():
                                             help='Project type (optional, default: software)')
     jira_project_create_parser.set_defaults(func=handle_jira_project_create)
 
+    # Jira project statuses
+    jira_project_statuses_parser = jira_project_subparsers.add_parser(
+        'statuses',
+        help='List available statuses for a Jira project',
+        description='List available statuses for a Jira project.',
+        epilog='Example: ./main.py jira project statuses [--project PROJECT_KEY]'
+    )
+    jira_project_statuses_parser.add_argument('--project', help='Project key (optional)')
+    jira_project_statuses_parser.set_defaults(func=handle_jira_project_statuses)
+
     # Jira task subcommands
     jira_task_parser = jira_subparsers.add_parser('task', help='Jira task commands', add_help=False)
     jira_task_subparsers = jira_task_parser.add_subparsers(help='Jira task subcommands', dest='task_command')
@@ -247,6 +352,20 @@ def setup_cli_parser():
                                          choices=['Task', 'Sub-task', 'Epic'],
                                          help='Task type (optional, default: Task)')
     jira_task_create_parser.set_defaults(func=handle_jira_task_create)
+
+    # Jira task list
+    jira_task_list_parser = jira_task_subparsers.add_parser(
+        'list',
+        help='List tasks for a project with optional filters',
+        description='List tasks for a project with optional filters.',
+        epilog='Example: ./main.py jira task list --project MYPROJ'
+    )
+    jira_task_list_parser.add_argument('--project', required=True, help='Project key (required)')
+    jira_task_list_parser.add_argument('--assignee', help='Assignee (optional)')
+    jira_task_list_parser.add_argument('--status', help='Status (optional). Common values might include: To Do, In Progress, Done. Use exact status name from your Jira project.')
+    jira_task_list_parser.add_argument('--labels', nargs='+', help='Labels (optional)')
+    jira_task_list_parser.add_argument('--sprint', help='Sprint (optional)')
+    jira_task_list_parser.set_defaults(func=handle_jira_task_list)
 
     return parser
 
