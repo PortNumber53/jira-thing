@@ -77,7 +77,7 @@ def load_environment_variables():
     if os.path.exists(config_file):
         config_parser.read(config_file)
 
-        # Override .env values with config file values if they exist
+        # Override config file values with .env values if they exist
         for section in config_parser.sections():
             for key, value in config_parser.items(section):
                 if not os.getenv(key.upper()):
@@ -88,11 +88,11 @@ def load_environment_variables():
     gemini_model_name = os.getenv('GEMINI_MODEL_NAME')
 
     if not api_key:
-        logger.error("GEMINI_API_KEY not found in .env or config file")
+        logger.error("GEMINI_API_KEY not found in .env file or ~/.config/jira-thing/environment.conf")
         sys.exit(1)
 
     if not gemini_model_name:
-        logger.error("GEMINI_MODEL_NAME not found in .env or config file")
+        logger.error("GEMINI_MODEL_NAME not found in .env file or ~/.config/jira-thing/environment.conf")
         sys.exit(1)
 
     # Configure Gemini API
@@ -104,8 +104,8 @@ def load_environment_variables():
     jira_username = os.getenv('JIRA_USERNAME')
 
     if not all([jira_server, jira_token, jira_username]):
-        logger.error("Missing Jira connection parameters in .env or config file")
-        raise ValueError("Missing Jira connection parameters in .env or config file")
+        logger.error("Missing Jira connection parameters in .env file or ~/.config/jira-thing/environment.conf")
+        raise ValueError("Missing Jira connection parameters in .env file or configuration file")
 
     return {
         'gemini_model_name': gemini_model_name,
