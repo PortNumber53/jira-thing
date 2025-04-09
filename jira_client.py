@@ -210,18 +210,20 @@ class JiraManager:
             list: A list of dictionaries containing status details grouped by issue type
         """
         try:
-            # If no project key is provided, fall back to global statuses
-            if not project_key:
-                statuses = self.client.statuses()
-                return [
-                    {
-                        'id': status.id,
-                        'name': status.name,
-                        'description': status.description or '',
-                        'category': status.statusCategory.name if status.statusCategory else ''
-                    }
-                    for status in statuses
-                ]
+            # Use the REST API directly to get global statuses
+            url = f'{self.client.server_url}/rest/api/2/status'
+            response = self.client._session.get(url)
+            response.raise_for_status()
+            statuses = response.json()
+            return [
+                {
+                    'id': status['id'],
+                    'name': status['name'],
+                    'description': status.get('description', ''),
+                    'category': status.get('statusCategory', {}).get('name', '')
+                }
+                for status in statuses
+            ]
 
             # Use the REST API directly to get project-specific statuses
             url = f'{self.client.server_url}/rest/api/2/project/{project_key}/statuses'
