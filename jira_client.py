@@ -142,7 +142,7 @@ class JiraManager:
                     # Collect unique statuses
                     unique_statuses = set(issue.fields.status.name for issue in all_issues)
 
-                    print("Available statuses:")
+                    print("Statuses in these issues:")
                     for unique_status in sorted(unique_statuses):
                         print(f"- {unique_status}")
 
