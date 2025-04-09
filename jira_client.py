@@ -196,9 +196,7 @@ class JiraManager:
                         print(status_obj.name)
                 except Exception as status_error:
                     logger.error(f"Could not retrieve project statuses: {status_error}")
-
-            # Consider whether to re-raise the exception or handle it here
-            # raise
+            raise
 
     def get_statuses(self, project_key=None):
         """
